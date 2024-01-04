@@ -1,9 +1,11 @@
 import { createReadStream, Stats } from 'fs'
+import {} from '@koishijs/plugin-server'
 import { stat } from 'fs/promises'
 import { Context, noop, sanitize, z } from 'koishi'
 import { extname, resolve } from 'path'
 
 export const name = 'public'
+export const inject = ['server']
 export const reusable = true
 
 export interface Config {
@@ -22,11 +24,10 @@ export const Config: z<Config> = z.object({
 export function apply(ctx: Context, config: Config) {
   const root = resolve(ctx.baseDir, config.root)
   const path = sanitize(config.path)
-  ctx.router.get(path + '(/.+)+', async (ctx, next) => {
-    const filename = resolve(root, ctx.path.slice(path.length))
-    if (!filename.startsWith(root)) {
-      return ctx.status = 403
-    }
+
+  ctx.server.get(path + '(/.+)+', async (ctx, next) => {
+    const filename = resolve(root, ctx.path.slice(path.length).replace(/^\/+/, ''))
+    if (!filename.startsWith(root)) return next()
     const stats = await stat(filename).catch<Stats>(noop)
     if (stats?.isFile()) {
       ctx.type = extname(filename)
