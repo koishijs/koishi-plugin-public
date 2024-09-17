@@ -1,7 +1,7 @@
 import { createReadStream, Stats } from 'fs'
 import {} from '@koishijs/plugin-server'
 import { stat } from 'fs/promises'
-import { Context, noop, sanitize, z } from 'koishi'
+import { Context, escapeRegExp, noop, sanitize, z } from 'koishi'
 import { extname, resolve } from 'path'
 
 export const name = 'public'
@@ -25,7 +25,7 @@ export function apply(ctx: Context, config: Config) {
   const root = resolve(ctx.baseDir, config.root)
   const path = sanitize(config.path)
 
-  ctx.server.get(path + '(/.+)+', async (ctx, next) => {
+  ctx.server.get(path + '(.*)', async (ctx, next) => {
     const filename = resolve(root, ctx.path.slice(path.length).replace(/^\/+/, ''))
     if (!filename.startsWith(root)) return next()
     const stats = await stat(filename).catch<Stats>(noop)
